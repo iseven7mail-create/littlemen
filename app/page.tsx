@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, ImagePlus, Printer, RotateCcw, Share2, Volume2, VolumeX } from "lucide-react";
+import { Download, ImagePlus, Music2, Printer, RotateCcw, Share2, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -68,18 +68,29 @@ export default function Home() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [zoom, setZoom] = useState(112);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
   const [tool, setTool] = useState<Tool>("hammer");
   const [hits, setHits] = useState(0);
   const [impact, setImpact] = useState(false);
   const [sound, setSound] = useState(true);
+  const [music, setMusic] = useState(true);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const ambientRef = useRef<{ nodes: OscillatorNode[]; timer: number } | null>(null);
   const release = Math.min(100, hits * 4);
   const displayName = nickname.trim() || "這個小人";
   const displayRelation = relation.trim() || "心裡的鳥事";
   const dollSrc = `/dolls/${gender}.png`;
 
   useEffect(() => () => { if (photo) URL.revokeObjectURL(photo); }, [photo]);
+  useEffect(() => () => {
+    if (ambientRef.current) {
+      window.clearInterval(ambientRef.current.timer);
+      ambientRef.current.nodes.forEach(node => { try { node.stop(); } catch {} });
+    }
+    void audioContextRef.current?.close();
+  }, []);
   const damageClass = useMemo(() => hits >= 20 ? "damage-4" : hits >= 14 ? "damage-3" : hits >= 8 ? "damage-2" : hits >= 3 ? "damage-1" : "", [hits]);
 
   function handleUpload(file?: File) {
@@ -89,16 +100,97 @@ export default function Home() {
     if (photo) URL.revokeObjectURL(photo);
     setPhoto(URL.createObjectURL(file));
   }
+
+  function getAudioContext() {
+    if (audioContextRef.current) return audioContextRef.current;
+    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return null;
+    audioContextRef.current = new AudioContextClass();
+    return audioContextRef.current;
+  }
+
+  function playEerieChime(ctx: AudioContext, duration = 1.8) {
+    const now = ctx.currentTime;
+    const notes = [174.61, 207.65, 233.08];
+    notes.forEach((frequency, index) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = index === 1 ? "triangle" : "sine";
+      osc.frequency.value = frequency;
+      osc.detune.value = index * 5 - 4;
+      gain.gain.setValueAtTime(0.0001, now + index * 0.09);
+      gain.gain.exponentialRampToValueAtTime(0.018, now + 0.12 + index * 0.09);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + index * 0.09);
+      osc.stop(now + duration + 0.05);
+    });
+  }
+
+  function startAmbient(force = false) {
+    if ((!music && !force) || ambientRef.current) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    void ctx.resume();
+    const master = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    master.gain.value = 0.025;
+    filter.type = "lowpass";
+    filter.frequency.value = 420;
+    master.connect(filter).connect(ctx.destination);
+    const nodes = [55, 82.41, 110].map((frequency, index) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = index === 1 ? "triangle" : "sine";
+      osc.frequency.value = frequency;
+      osc.detune.value = index * 7 - 6;
+      gain.gain.value = index === 1 ? 0.32 : 0.22;
+      osc.connect(gain).connect(master);
+      osc.start();
+      return osc;
+    });
+    playEerieChime(ctx);
+    const timer = window.setInterval(() => playEerieChime(ctx), 5600);
+    ambientRef.current = { nodes, timer };
+  }
+
+  function stopAmbient() {
+    if (!ambientRef.current) return;
+    window.clearInterval(ambientRef.current.timer);
+    ambientRef.current.nodes.forEach(node => { try { node.stop(); } catch {} });
+    ambientRef.current = null;
+  }
+
+  function toggleMusic(enabled: boolean) {
+    setMusic(enabled);
+    if (enabled) startAmbient(true); else stopAmbient();
+  }
+
+  function playHitSound(kind: Tool) {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    void ctx.resume();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const melody = [196, 233.08, 261.63, 311.13];
+    osc.type = kind === "slipper" ? "square" : kind === "stamp" ? "sine" : "triangle";
+    osc.frequency.setValueAtTime(melody[hits % melody.length], now);
+    osc.frequency.exponentialRampToValueAtTime(kind === "stamp" ? 82 : 110, now + (kind === "stamp" ? 0.42 : 0.13));
+    gain.gain.setValueAtTime(kind === "stamp" ? 0.11 : 0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "stamp" ? 0.5 : 0.16));
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + (kind === "stamp" ? 0.52 : 0.18));
+  }
+
   function hit() {
     setHits(n => Math.min(25, n + 1)); setImpact(false); requestAnimationFrame(() => setImpact(true)); window.setTimeout(() => setImpact(false), 240);
     if (navigator.vibrate) navigator.vibrate(18);
-    if (sound) {
-      const Ctx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (Ctx) { const ctx = new Ctx(); const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.type="triangle"; osc.frequency.value=tool==="stamp"?105:145; gain.gain.setValueAtTime(.12,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.09); osc.connect(gain).connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime+.09); }
-    }
+    if (sound) playHitSound(tool);
   }
-  function finish() { setPhraseIndex(Math.floor(Math.random()*PHRASES.length)); setStep(4); window.scrollTo({top:0,behavior:"smooth"}); }
-  function reset() { setStep(1); setHits(0); setNickname(""); setRelation(""); setPhoto(null); setPosition({x:0,y:0}); setZoom(112); }
+  function finish() { const ctx=getAudioContext(); if(ctx&&sound) playEerieChime(ctx,2.4); stopAmbient(); setPhraseIndex(Math.floor(Math.random()*PHRASES.length)); setStep(4); window.scrollTo({top:0,behavior:"smooth"}); }
+  function reset() { stopAmbient(); setStep(1); setHits(0); setNickname(""); setRelation(""); setPhoto(null); setPosition({x:0,y:0}); setZoom(112); setRotation(0); }
 
   async function drawResult(width:number,height:number) {
     const canvas=document.createElement("canvas"); canvas.width=width; canvas.height=height; const ctx=canvas.getContext("2d")!; const s=width/1080;
@@ -106,7 +198,7 @@ export default function Home() {
     ctx.fillStyle="#f8efd9";ctx.fillRect(0,0,width,height);ctx.strokeStyle="#d99811";ctx.lineWidth=10*s;ctx.setLineDash([18*s,12*s]);ctx.strokeRect(38*s,38*s,width-76*s,height-76*s);ctx.setLineDash([]);
     ctx.textAlign="center";ctx.fillStyle="#b73320";ctx.font=`900 ${62*s}px Arial`;ctx.fillText("少甫・勒令退散符",width/2,118*s);
     const doll=await load(dollSrc);ctx.drawImage(doll,55*s,180*s,405*s,610*s);
-    if(photo){const face=await load(photo);ctx.save();ctx.beginPath();ctx.ellipse(258*s,330*s,92*s,112*s,0,0,Math.PI*2);ctx.clip();const size=240*s*zoom/100;ctx.filter="saturate(.72) contrast(1.08) sepia(.12)";ctx.drawImage(face,(258+position.x)*s-size/2,(330+position.y)*s-size/2,size,size);ctx.restore();}
+    if(photo){const face=await load(photo);ctx.save();ctx.beginPath();ctx.ellipse(258*s,330*s,92*s,112*s,0,0,Math.PI*2);ctx.clip();const size=240*s*zoom/100;ctx.filter="saturate(.72) contrast(1.08) sepia(.12)";ctx.translate((258+position.x)*s,(330+position.y)*s);ctx.rotate(rotation*Math.PI/180);ctx.drawImage(face,-size/2,-size/2,size,size);ctx.restore();}
     ctx.textAlign="left";ctx.fillStyle="#7f2118";ctx.font=`700 ${32*s}px Arial`;ctx.fillText(`${displayRelation}・${displayName}`,500*s,235*s);ctx.font=`900 ${68*s}px Arial`;ctx.fillText("勒令退散",500*s,330*s);ctx.fillStyle="#201d18";ctx.font=`600 ${34*s}px Arial`;wrapText(ctx,PHRASES[phraseIndex],500*s,410*s,500*s,54*s);
     ctx.strokeStyle="#bd3a24";ctx.lineWidth=7*s;ctx.strokeRect(510*s,650*s,420*s,82*s);ctx.textAlign="center";ctx.fillStyle="#bd3a24";ctx.font=`800 ${34*s}px Arial`;ctx.fillText("情緒退散提醒",720*s,706*s);
     try{const qr=await load(qrUrl);ctx.drawImage(qr,98*s,(height/s-410)*s,210*s,210*s);}catch{}
@@ -118,12 +210,24 @@ export default function Home() {
   return <main className="site-shell"><section className="game-card" aria-live="polite">
     <header className="game-header"><div className="sun-doodle" aria-hidden>☀</div><div><p className="eyebrow">少甫的情緒退散遊戲</p><h1>少甫・小人退散所</h1></div><div className="spiral" aria-hidden>◎</div></header>
     <div className="stepper" aria-label={`步驟 ${step}／4`}>{[1,2,3,4].map(n=><span key={n} className={n<=step?"active":""}>{n}</span>)}</div>
-    {step===1&&<div className="screen screen-enter"><div className="burst-title"><h2>今天想讓哪個小人退散？</h2></div><RadioGroup value={gender} onValueChange={v=>setGender(v as Gender)} className="gender-grid">{(["male","female"] as Gender[]).map(g=><label key={g} className={`choice-card ${gender===g?"selected":""}`}><RadioGroupItem value={g} className="sr-only"/><img src={`/dolls/${g}.png`} alt={g==="male"?"男符紙紙人":"女符紙紙人"}/><strong>{g==="male"?"男紙人":"女紙人"}</strong></label>)}</RadioGroup><Button className="crayon-button primary" onClick={()=>setStep(2)}>開始退散</Button><p className="privacy-note">🔒 照片只在你的裝置內處理，不會上傳或保存</p></div>}
-    {step===2&&<div className="screen screen-enter"><div className="burst-title"><h2>放上小人的臉</h2></div><DollStage src={dollSrc} photo={photo} zoom={zoom} position={position} damageClass="" label={nickname}/><input ref={fileRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>handleUpload(e.target.files?.[0])}/><Button variant="outline" className="upload-button" onClick={()=>fileRef.current?.click()}><ImagePlus/>{photo?"更換照片":"上傳照片"}</Button><div className="field-grid"><label>暱稱<input maxLength={10} value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="例如：周柔柔"/></label><label>關係<input maxLength={10} value={relation} onChange={e=>setRelation(e.target.value)} placeholder="例如：前任"/></label></div>{photo&&<div className="adjust-panel"><label>縮放</label><Slider min={80} max={180} value={[zoom]} onValueChange={v=>setZoom(v[0])}/><div className="move-grid"><button onClick={()=>setPosition(p=>({...p,y:p.y-5}))}>↑</button><button onClick={()=>setPosition(p=>({...p,x:p.x-5}))}>←</button><button onClick={()=>setPosition(p=>({...p,x:p.x+5}))}>→</button><button onClick={()=>setPosition(p=>({...p,y:p.y+5}))}>↓</button></div></div>}<Button className="crayon-button primary" onClick={()=>setStep(3)}>下一步：選工具</Button><button className="text-button" onClick={()=>{setPhoto(null);setStep(3)}}>略過照片</button></div>}
-    {step===3&&<div className="screen screen-enter"><div className="hud"><div><span>敲打</span><strong>{hits}</strong><small>次</small></div><div className="meter"><span>壓力釋放 {release}%</span><Progress value={release}/></div><label className="sound-toggle">{sound?<Volume2/>:<VolumeX/>}<Switch checked={sound} onCheckedChange={setSound} aria-label="音效"/></label></div><button className={`hit-zone ${impact?"is-hit":""}`} onClick={hit} aria-label={`使用${toolInfo[tool].label}敲打紙人`}><DollStage src={dollSrc} photo={photo} zoom={zoom} position={position} damageClass={damageClass} label={displayName} relation={displayRelation}/><span className={`tool-swing tool-${tool}`}>{toolInfo[tool].emoji}</span>{impact&&<span className="impact-word">{toolInfo[tool].phrase}</span>}<span className="hit-hint">點紙人開始敲打</span></button><RadioGroup value={tool} onValueChange={v=>setTool(v as Tool)} className="tools-grid">{(Object.keys(toolInfo) as Tool[]).map(t=><label key={t} className={`tool-card ${tool===t?"selected":""}`}><RadioGroupItem value={t} className="sr-only"/><span>{toolInfo[t].emoji}</span><strong>{toolInfo[t].label}</strong></label>)}</RadioGroup><Button className="crayon-button primary" disabled={hits<5} onClick={finish}>{hits<5?`再敲 ${5-hits} 下`:"完成退散"}</Button></div>}
-    {step===4&&<div className="screen screen-enter result-screen"><div className="burst-title"><h2>你的退散符完成了</h2></div><div className="result-sheet"><div className="result-doll"><DollStage src={dollSrc} photo={photo} zoom={zoom} position={position} damageClass="damage-4" label={displayName}/></div><div className="cut-line">✂</div><article className="talisman-copy"><span className="ribbon">勒令退散符</span><p className="target">{displayRelation}・{displayName}</p><h2>勒令退散</h2><p className="healing">{PHRASES[phraseIndex]}</p><span className="emotion-seal">情緒退散提醒</span></article></div><div className="download-grid"><Button variant="outline" onClick={()=>download("share")}><Download/>下載手機分享圖</Button><Button variant="outline" onClick={()=>download("a4")}><Printer/>下載 A4 列印版</Button></div><Button className="share-button" onClick={shareResult}><Share2/>分享</Button><aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous"/><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside><p className="disclaimer">純屬娛樂、民俗文化與情緒自我探索，不代替心理、醫療或其他專業協助。</p><Button variant="ghost" onClick={reset}><RotateCcw/>重新玩一次</Button></div>}
+    {step===1&&<div className="screen screen-enter"><div className="burst-title"><h2>今天想讓哪個小人退散？</h2></div><RadioGroup value={gender} onValueChange={v=>setGender(v as Gender)} className="gender-grid">{(["male","female"] as Gender[]).map(g=><label key={g} className={`choice-card ${gender===g?"selected":""}`}><RadioGroupItem value={g} className="sr-only"/><img src={`/dolls/${g}.png`} alt={g==="male"?"男符紙紙人":"女符紙紙人"}/><strong>{g==="male"?"男紙人":"女紙人"}</strong></label>)}</RadioGroup><div className="music-panel"><Music2/><div><strong>靈異氛圍音樂</strong><small>按下開始後播放，可隨時關閉</small></div><Switch checked={music} onCheckedChange={setMusic} aria-label="靈異氛圍音樂"/></div><Button className="crayon-button primary" onClick={()=>{setStep(2);if(music)startAmbient()}}>開始退散</Button><p className="privacy-note">🔒 照片只在你的裝置內處理，不會上傳或保存</p></div>}
+    {step===2&&<div className="screen screen-enter"><div className="burst-title"><h2>放上小人的臉</h2></div><DollStage src={dollSrc} photo={photo} zoom={zoom} rotation={rotation} position={position} onPositionChange={setPosition} editable damageClass="" label={nickname}/><input ref={fileRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>handleUpload(e.target.files?.[0])}/><Button variant="outline" className="upload-button" onClick={()=>fileRef.current?.click()}><ImagePlus/>{photo?"更換照片":"上傳照片"}</Button><div className="field-grid"><label>暱稱<input maxLength={10} value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="例如：周柔柔"/></label><label>關係<input maxLength={10} value={relation} onChange={e=>setRelation(e.target.value)} placeholder="例如：前任"/></label></div>{photo&&<div className="adjust-panel"><div className="adjust-row"><label>放大縮小 <b>{zoom}%</b></label><Slider min={80} max={220} value={[zoom]} onValueChange={v=>setZoom(v[0])}/></div><div className="adjust-row"><label>旋轉角度 <b>{rotation}°</b></label><Slider min={-180} max={180} step={1} value={[rotation]} onValueChange={v=>setRotation(v[0])}/></div><div className="move-controls"><span>拖曳臉部直接移動</span><div className="move-grid"><button onClick={()=>setPosition(p=>({...p,y:p.y-5}))}>↑</button><button onClick={()=>setPosition(p=>({...p,x:p.x-5}))}>←</button><button onClick={()=>setPosition(p=>({...p,x:p.x+5}))}>→</button><button onClick={()=>setPosition(p=>({...p,y:p.y+5}))}>↓</button></div><button className="reset-face" onClick={()=>{setZoom(112);setRotation(0);setPosition({x:0,y:0})}}>重設</button></div></div>}<Button className="crayon-button primary" onClick={()=>setStep(3)}>下一步：選工具</Button><button className="text-button" onClick={()=>{setPhoto(null);setStep(3)}}>略過照片</button></div>}
+    {step===3&&<div className="screen screen-enter"><div className="hud"><div><span>敲打</span><strong>{hits}</strong><small>次</small></div><div className="meter"><span>壓力釋放 {release}%</span><Progress value={release}/></div><div className="audio-controls"><label title="背景音樂"><Music2/><Switch checked={music} onCheckedChange={toggleMusic} aria-label="背景音樂"/></label><label title="敲擊音效">{sound?<Volume2/>:<VolumeX/>}<Switch checked={sound} onCheckedChange={setSound} aria-label="敲擊音效"/></label></div></div><button className={`hit-zone ${impact?"is-hit":""}`} onClick={hit} aria-label={`使用${toolInfo[tool].label}敲打紙人`}><DollStage src={dollSrc} photo={photo} zoom={zoom} rotation={rotation} position={position} damageClass={damageClass} label={displayName} relation={displayRelation}/><span className={`tool-swing tool-${tool}`}>{toolInfo[tool].emoji}</span>{impact&&<span className="impact-word">{toolInfo[tool].phrase}</span>}<span className="hit-hint">點紙人開始敲打，每下都有不同音符</span></button><RadioGroup value={tool} onValueChange={v=>setTool(v as Tool)} className="tools-grid">{(Object.keys(toolInfo) as Tool[]).map(t=><label key={t} className={`tool-card ${tool===t?"selected":""}`}><RadioGroupItem value={t} className="sr-only"/><span>{toolInfo[t].emoji}</span><strong>{toolInfo[t].label}</strong></label>)}</RadioGroup><Button className="crayon-button primary" disabled={hits<5} onClick={finish}>{hits<5?`再敲 ${5-hits} 下`:"完成退散"}</Button></div>}
+    {step===4&&<div className="screen screen-enter result-screen"><div className="burst-title"><h2>你的退散符完成了</h2></div><div className="result-sheet"><div className="result-doll"><DollStage src={dollSrc} photo={photo} zoom={zoom} rotation={rotation} position={position} damageClass="damage-4" label={displayName}/></div><div className="cut-line">✂</div><article className="talisman-copy"><span className="ribbon">勒令退散符</span><p className="target">{displayRelation}・{displayName}</p><h2>勒令退散</h2><p className="healing">{PHRASES[phraseIndex]}</p><span className="emotion-seal">情緒退散提醒</span></article></div><div className="download-grid"><Button variant="outline" onClick={()=>download("share")}><Download/>下載手機分享圖</Button><Button variant="outline" onClick={()=>download("a4")}><Printer/>下載 A4 列印版</Button></div><Button className="share-button" onClick={shareResult}><Share2/>分享</Button><aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous"/><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside><p className="disclaimer">純屬娛樂、民俗文化與情緒自我探索，不代替心理、醫療或其他專業協助。</p><Button variant="ghost" onClick={reset}><RotateCcw/>重新玩一次</Button></div>}
   </section></main>;
 }
 
-function DollStage({src,photo,zoom,position,damageClass,label,relation}:{src:string;photo:string|null;zoom:number;position:{x:number;y:number};damageClass:string;label?:string;relation?:string}){return <div className={`doll-stage ${damageClass}`}>{photo&&<div className="face-window"><img src={photo} alt="使用者上傳的紙人臉部" style={{width:`${zoom}%`,height:`${zoom}%`,transform:`translate(${position.x}px, ${position.y}px)`}}/></div>}<img className="doll-art" src={src} alt="符紙紙人"/>{!photo&&<div className="face-placeholder"><ImagePlus/><span>上傳照片</span></div>}{label&&<span className="name-tag">{label}</span>}{relation&&<span className="relation-tag">{relation}</span>}<span className="bruise" aria-hidden>〽</span><span className="bandage" aria-hidden>OK</span><span className="smoke" aria-hidden>☁</span><span className="stamp-mark" aria-hidden>退散</span></div>}
+function DollStage({src,photo,zoom,rotation=0,position,onPositionChange,editable=false,damageClass,label,relation}:{src:string;photo:string|null;zoom:number;rotation?:number;position:{x:number;y:number};onPositionChange?:(position:{x:number;y:number})=>void;editable?:boolean;damageClass:string;label?:string;relation?:string}){
+  const dragRef=useRef<{x:number;y:number;originX:number;originY:number}|null>(null);
+  return <div className={`doll-stage ${damageClass}`}>
+    {photo&&<div className={`face-window ${editable?"editable":""}`}
+      onPointerDown={e=>{if(!editable)return;e.currentTarget.setPointerCapture(e.pointerId);dragRef.current={x:e.clientX,y:e.clientY,originX:position.x,originY:position.y}}}
+      onPointerMove={e=>{if(!dragRef.current||!onPositionChange)return;e.preventDefault();onPositionChange({x:dragRef.current.originX+e.clientX-dragRef.current.x,y:dragRef.current.originY+e.clientY-dragRef.current.y})}}
+      onPointerUp={e=>{if(editable)e.currentTarget.releasePointerCapture(e.pointerId);dragRef.current=null}}
+      onPointerCancel={()=>{dragRef.current=null}}>
+      <img src={photo} draggable={false} alt="使用者上傳的紙人臉部" style={{width:`${zoom}%`,height:`${zoom}%`,transform:`translate(${position.x}px, ${position.y}px) rotate(${rotation}deg)`}}/>
+    </div>}
+    <img className="doll-art" src={src} alt="符紙紙人"/>{!photo&&<div className="face-placeholder"><ImagePlus/><span>上傳照片</span></div>}{label&&<span className="name-tag">{label}</span>}{relation&&<span className="relation-tag">{relation}</span>}<span className="bruise" aria-hidden>〽</span><span className="bandage" aria-hidden>OK</span><span className="smoke" aria-hidden>☁</span><span className="stamp-mark" aria-hidden>退散</span>
+  </div>
+}
 function wrapText(ctx:CanvasRenderingContext2D,text:string,x:number,y:number,maxWidth:number,lineHeight:number){let line="";for(const char of text){const next=line+char;if(ctx.measureText(next).width>maxWidth&&line){ctx.fillText(line,x,y);line=char;y+=lineHeight}else line=next}ctx.fillText(line,x,y)}
