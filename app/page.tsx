@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { Download, ImagePlus, Music2, Printer, RotateCcw, Share2, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 
 type Gender = "male" | "female";
@@ -211,23 +211,70 @@ export default function Home() {
     <header className="game-header"><div className="sun-doodle" aria-hidden>☀</div><div><p className="eyebrow">少甫的情緒退散遊戲</p><h1>少甫・小人退散所</h1></div><div className="spiral" aria-hidden>◎</div></header>
     <div className="stepper" aria-label={`步驟 ${step}／4`}>{[1,2,3,4].map(n=><span key={n} className={n<=step?"active":""}>{n}</span>)}</div>
     {step===1&&<div className="screen screen-enter"><div className="burst-title"><h2>今天想讓哪個小人退散？</h2></div><RadioGroup value={gender} onValueChange={v=>setGender(v as Gender)} className="gender-grid">{(["male","female"] as Gender[]).map(g=><label key={g} className={`choice-card ${gender===g?"selected":""}`}><RadioGroupItem value={g} className="sr-only"/><img src={`/dolls/${g}.png`} alt={g==="male"?"男符紙紙人":"女符紙紙人"}/><strong>{g==="male"?"男紙人":"女紙人"}</strong></label>)}</RadioGroup><div className="music-panel"><Music2/><div><strong>靈異氛圍音樂</strong><small>按下開始後播放，可隨時關閉</small></div><Switch checked={music} onCheckedChange={setMusic} aria-label="靈異氛圍音樂"/></div><Button className="crayon-button primary" onClick={()=>{setStep(2);if(music)startAmbient()}}>開始退散</Button><p className="privacy-note">🔒 照片只在你的裝置內處理，不會上傳或保存</p></div>}
-    {step===2&&<div className="screen screen-enter"><div className="burst-title"><h2>放上小人的臉</h2></div><DollStage src={dollSrc} photo={photo} zoom={zoom} rotation={rotation} position={position} onPositionChange={setPosition} editable damageClass="" label={nickname}/><input ref={fileRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>handleUpload(e.target.files?.[0])}/><Button variant="outline" className="upload-button" onClick={()=>fileRef.current?.click()}><ImagePlus/>{photo?"更換照片":"上傳照片"}</Button><div className="field-grid"><label>暱稱<input maxLength={10} value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="例如：周柔柔"/></label><label>關係<input maxLength={10} value={relation} onChange={e=>setRelation(e.target.value)} placeholder="例如：前任"/></label></div>{photo&&<div className="adjust-panel"><div className="adjust-row"><label>放大縮小 <b>{zoom}%</b></label><Slider min={80} max={220} value={[zoom]} onValueChange={v=>setZoom(v[0])}/></div><div className="adjust-row"><label>旋轉角度 <b>{rotation}°</b></label><Slider min={-180} max={180} step={1} value={[rotation]} onValueChange={v=>setRotation(v[0])}/></div><div className="move-controls"><span>拖曳臉部直接移動</span><div className="move-grid"><button onClick={()=>setPosition(p=>({...p,y:p.y-5}))}>↑</button><button onClick={()=>setPosition(p=>({...p,x:p.x-5}))}>←</button><button onClick={()=>setPosition(p=>({...p,x:p.x+5}))}>→</button><button onClick={()=>setPosition(p=>({...p,y:p.y+5}))}>↓</button></div><button className="reset-face" onClick={()=>{setZoom(112);setRotation(0);setPosition({x:0,y:0})}}>重設</button></div></div>}<Button className="crayon-button primary" onClick={()=>setStep(3)}>下一步：選工具</Button><button className="text-button" onClick={()=>{setPhoto(null);setStep(3)}}>略過照片</button></div>}
+    {step===2&&<div className="screen screen-enter"><div className="burst-title"><h2>放上小人的臉</h2></div><DollStage src={dollSrc} photo={photo} zoom={zoom} rotation={rotation} position={position} onPositionChange={setPosition} onZoomChange={setZoom} onRotationChange={setRotation} editable damageClass="" label={nickname}/><input ref={fileRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>handleUpload(e.target.files?.[0])}/><Button variant="outline" className="upload-button" onClick={()=>fileRef.current?.click()}><ImagePlus/>{photo?"更換照片":"上傳照片"}</Button>{photo&&<div className="gesture-hint"><strong>直接碰照片調整</strong><span>單指拖曳位置｜雙指開合縮放｜雙指旋轉</span><small>縮放 {zoom}%・旋轉 {rotation}°</small></div>}<div className="field-grid"><label>暱稱<input maxLength={10} value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="例如：周柔柔"/></label><label>關係<input maxLength={10} value={relation} onChange={e=>setRelation(e.target.value)} placeholder="例如：前任"/></label></div><Button className="crayon-button primary" onClick={()=>setStep(3)}>下一步：選工具</Button><button className="text-button" onClick={()=>{setPhoto(null);setStep(3)}}>略過照片</button></div>}
     {step===3&&<div className="screen screen-enter"><div className="hud"><div><span>敲打</span><strong>{hits}</strong><small>次</small></div><div className="meter"><span>壓力釋放 {release}%</span><Progress value={release}/></div><div className="audio-controls"><label title="背景音樂"><Music2/><Switch checked={music} onCheckedChange={toggleMusic} aria-label="背景音樂"/></label><label title="敲擊音效">{sound?<Volume2/>:<VolumeX/>}<Switch checked={sound} onCheckedChange={setSound} aria-label="敲擊音效"/></label></div></div><button className={`hit-zone ${impact?"is-hit":""}`} onClick={hit} aria-label={`使用${toolInfo[tool].label}敲打紙人`}><DollStage src={dollSrc} photo={photo} zoom={zoom} rotation={rotation} position={position} damageClass={damageClass} label={displayName} relation={displayRelation}/><span className={`tool-swing tool-${tool}`}>{toolInfo[tool].emoji}</span>{impact&&<span className="impact-word">{toolInfo[tool].phrase}</span>}<span className="hit-hint">點紙人開始敲打，每下都有不同音符</span></button><RadioGroup value={tool} onValueChange={v=>setTool(v as Tool)} className="tools-grid">{(Object.keys(toolInfo) as Tool[]).map(t=><label key={t} className={`tool-card ${tool===t?"selected":""}`}><RadioGroupItem value={t} className="sr-only"/><span>{toolInfo[t].emoji}</span><strong>{toolInfo[t].label}</strong></label>)}</RadioGroup><Button className="crayon-button primary" disabled={hits<5} onClick={finish}>{hits<5?`再敲 ${5-hits} 下`:"完成退散"}</Button></div>}
     {step===4&&<div className="screen screen-enter result-screen"><div className="burst-title"><h2>你的退散符完成了</h2></div><div className="result-sheet"><div className="result-doll"><DollStage src={dollSrc} photo={photo} zoom={zoom} rotation={rotation} position={position} damageClass="damage-4" label={displayName}/></div><div className="cut-line">✂</div><article className="talisman-copy"><span className="ribbon">勒令退散符</span><p className="target">{displayRelation}・{displayName}</p><h2>勒令退散</h2><p className="healing">{PHRASES[phraseIndex]}</p><span className="emotion-seal">情緒退散提醒</span></article></div><div className="download-grid"><Button variant="outline" onClick={()=>download("share")}><Download/>下載手機分享圖</Button><Button variant="outline" onClick={()=>download("a4")}><Printer/>下載 A4 列印版</Button></div><Button className="share-button" onClick={shareResult}><Share2/>分享</Button><aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous"/><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside><p className="disclaimer">純屬娛樂、民俗文化與情緒自我探索，不代替心理、醫療或其他專業協助。</p><Button variant="ghost" onClick={reset}><RotateCcw/>重新玩一次</Button></div>}
   </section></main>;
 }
 
-function DollStage({src,photo,zoom,rotation=0,position,onPositionChange,editable=false,damageClass,label,relation}:{src:string;photo:string|null;zoom:number;rotation?:number;position:{x:number;y:number};onPositionChange?:(position:{x:number;y:number})=>void;editable?:boolean;damageClass:string;label?:string;relation?:string}){
-  const dragRef=useRef<{x:number;y:number;originX:number;originY:number}|null>(null);
-  return <div className={`doll-stage ${damageClass}`}>
-    {photo&&<div className={`face-window ${editable?"editable":""}`}
-      onPointerDown={e=>{if(!editable)return;e.currentTarget.setPointerCapture(e.pointerId);dragRef.current={x:e.clientX,y:e.clientY,originX:position.x,originY:position.y}}}
-      onPointerMove={e=>{if(!dragRef.current||!onPositionChange)return;e.preventDefault();onPositionChange({x:dragRef.current.originX+e.clientX-dragRef.current.x,y:dragRef.current.originY+e.clientY-dragRef.current.y})}}
-      onPointerUp={e=>{if(editable)e.currentTarget.releasePointerCapture(e.pointerId);dragRef.current=null}}
-      onPointerCancel={()=>{dragRef.current=null}}>
-      <img src={photo} draggable={false} alt="使用者上傳的紙人臉部" style={{width:`${zoom}%`,height:`${zoom}%`,transform:`translate(${position.x}px, ${position.y}px) rotate(${rotation}deg)`}}/>
-    </div>}
+function DollStage({src,photo,zoom,rotation=0,position,onPositionChange,onZoomChange,onRotationChange,editable=false,damageClass,label,relation}:{src:string;photo:string|null;zoom:number;rotation?:number;position:{x:number;y:number};onPositionChange?:(position:{x:number;y:number})=>void;onZoomChange?:(zoom:number)=>void;onRotationChange?:(rotation:number)=>void;editable?:boolean;damageClass:string;label?:string;relation?:string}){
+  const pointsRef=useRef(new Map<number,{x:number;y:number}>());
+  const singleRef=useRef<{x:number;y:number;originX:number;originY:number}|null>(null);
+  const gestureRef=useRef<{distance:number;angle:number;centerX:number;centerY:number;zoom:number;rotation:number;position:{x:number;y:number}}|null>(null);
+  const latestRef=useRef({position,zoom,rotation});
+  useEffect(()=>{latestRef.current={position,zoom,rotation}},[position,zoom,rotation]);
+  const clamp=(value:number,min:number,max:number)=>Math.min(max,Math.max(min,value));
+
+  function metrics(){
+    const points=[...pointsRef.current.values()];
+    if(points.length<2)return null;
+    const [a,b]=points;
+    return {distance:Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),angle:Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI,centerX:(a.x+b.x)/2,centerY:(a.y+b.y)/2};
+  }
+  function beginGesture(){const m=metrics();if(!m)return;gestureRef.current={...m,zoom:latestRef.current.zoom,rotation:latestRef.current.rotation,position:{...latestRef.current.position}}}
+  function pointerDown(e:ReactPointerEvent<HTMLDivElement>){
+    if(!editable||!photo)return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    pointsRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointsRef.current.size===1)singleRef.current={x:e.clientX,y:e.clientY,originX:latestRef.current.position.x,originY:latestRef.current.position.y};
+    else{singleRef.current=null;beginGesture()}
+  }
+  function pointerMove(e:ReactPointerEvent<HTMLDivElement>){
+    if(!pointsRef.current.has(e.pointerId))return;
+    e.preventDefault();
+    pointsRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointsRef.current.size>=2){
+      if(!gestureRef.current)beginGesture();
+      const m=metrics(),base=gestureRef.current;
+      if(!m||!base)return;
+      let angleDelta=m.angle-base.angle;if(angleDelta>180)angleDelta-=360;if(angleDelta<-180)angleDelta+=360;
+      const nextZoom=Math.round(clamp(base.zoom*m.distance/base.distance,80,220));
+      const nextRotation=Math.round(clamp(base.rotation+angleDelta,-180,180));
+      const nextPosition={x:base.position.x+m.centerX-base.centerX,y:base.position.y+m.centerY-base.centerY};
+      latestRef.current={position:nextPosition,zoom:nextZoom,rotation:nextRotation};
+      onPositionChange?.(nextPosition);onZoomChange?.(nextZoom);onRotationChange?.(nextRotation);
+    }else if(singleRef.current){
+      const nextPosition={x:singleRef.current.originX+e.clientX-singleRef.current.x,y:singleRef.current.originY+e.clientY-singleRef.current.y};
+      latestRef.current={...latestRef.current,position:nextPosition};onPositionChange?.(nextPosition);
+    }
+  }
+  function pointerEnd(e:ReactPointerEvent<HTMLDivElement>){
+    pointsRef.current.delete(e.pointerId);gestureRef.current=null;
+    const remaining=[...pointsRef.current.values()][0];
+    singleRef.current=remaining?{x:remaining.x,y:remaining.y,originX:latestRef.current.position.x,originY:latestRef.current.position.y}:null;
+  }
+  function quick(zoomDelta=0,rotationDelta=0){
+    const nextZoom=clamp(zoom+zoomDelta,80,220),nextRotation=clamp(rotation+rotationDelta,-180,180);
+    onZoomChange?.(nextZoom);onRotationChange?.(nextRotation);
+  }
+  function resetTransform(){onPositionChange?.({x:0,y:0});onZoomChange?.(112);onRotationChange?.(0)}
+
+  return <div className={`doll-stage ${editable&&photo?"editable-stage":""} ${damageClass}`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd}>
+    {photo&&<div className="face-window"><img src={photo} draggable={false} alt="使用者上傳的紙人臉部" style={{width:`${zoom}%`,height:`${zoom}%`,transform:`translate(${position.x}px, ${position.y}px) rotate(${rotation}deg)`}}/></div>}
     <img className="doll-art" src={src} alt="符紙紙人"/>{!photo&&<div className="face-placeholder"><ImagePlus/><span>上傳照片</span></div>}{label&&<span className="name-tag">{label}</span>}{relation&&<span className="relation-tag">{relation}</span>}<span className="bruise" aria-hidden>〽</span><span className="bandage" aria-hidden>OK</span><span className="smoke" aria-hidden>☁</span><span className="stamp-mark" aria-hidden>退散</span>
+    {editable&&photo&&<div className="photo-tools" onPointerDown={e=>e.stopPropagation()}>
+      <button onClick={()=>quick(-10,0)} aria-label="縮小照片">−</button><button onClick={()=>quick(10,0)} aria-label="放大照片">＋</button><button onClick={()=>quick(0,-15)} aria-label="向左旋轉">↶</button><button onClick={()=>quick(0,15)} aria-label="向右旋轉">↷</button><button className="reset-tool" onClick={resetTransform} aria-label="重設照片">重設</button>
+    </div>}
   </div>
 }
 function wrapText(ctx:CanvasRenderingContext2D,text:string,x:number,y:number,maxWidth:number,lineHeight:number){let line="";for(const char of text){const next=line+char;if(ctx.measureText(next).width>maxWidth&&line){ctx.fillText(line,x,y);line=char;y+=lineHeight}else line=next}ctx.fillText(line,x,y)}
