@@ -34,18 +34,24 @@ body{background-color:#17120d;background-image:radial-gradient(circle at 50% 8%,
 .privacy-note{color:#4c321f;font-weight:700}
 .doll-stage{aspect-ratio:2/3;filter:drop-shadow(3px 7px 3px #3d220f66)}
 .doll-art{object-fit:contain}
-.talisman-doll .doll-inscription{position:absolute;z-index:4;top:36%;left:28%;right:28%;display:flex;flex-direction:column;gap:5px;padding:7px 3px;color:#861d18;text-align:center;font-family:"DFKai-SB","BiauKai","Noto Serif TC",serif;font-size:clamp(10px,2.8vw,14px);font-weight:900;line-height:1.15;text-shadow:0 1px #efcf80;transform:rotate(-.5deg);pointer-events:none}
-.doll-inscription span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid #8b281a80}
-.doll-inscription b{margin-right:4px;color:#382018;font-size:.72em;font-weight:900}
+.talisman-doll .doll-inscription{position:absolute;z-index:4;top:35%;bottom:22%;left:28%;right:28%;display:flex;flex-direction:row;justify-content:center;align-items:flex-start;gap:12px;padding:7px 3px;color:#861d18;text-align:center;font-family:"DFKai-SB","BiauKai","Noto Serif TC",serif;font-size:clamp(10px,2.8vw,14px);font-weight:900;line-height:1.15;text-shadow:0 1px #efcf80;transform:rotate(-.5deg);pointer-events:none;writing-mode:vertical-rl;text-orientation:upright}
+.doll-inscription span{display:block;max-height:100%;overflow:hidden;white-space:nowrap;border-left:1px solid #8b281a80;padding-left:3px}
+.doll-inscription b{margin-bottom:4px;color:#382018;font-size:.72em;font-weight:900}
 .inscription-guide{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:9px;padding:10px 12px;background:#dec17a;border:3px double var(--red);color:#39271a;line-height:1.55}
 .inscription-guide strong{color:var(--red);white-space:nowrap;font-family:"DFKai-SB","BiauKai",serif}
 .inscription-guide span{font-size:12px;font-weight:700}
-.field-grid.three-fields{grid-template-columns:repeat(3,1fr)}
+.field-grid.two-fields{grid-template-columns:repeat(2,1fr)}
 .field-grid input{background:#f0dca5;border-radius:3px;border-color:#4c2b1c}
 .field-grid input:focus{border-color:var(--red);box-shadow:0 0 0 3px #99251c25}
 .hit-zone .doll-stage{width:min(76vw,370px)}
-.result-sheet{background:#e2c277;border-color:#8d5c28}
+.tools-grid{grid-template-columns:repeat(2,1fr)}
+.result-sheet{grid-template-columns:56% 12px 1fr;background:#e2c277;border-color:#8d5c28}
+.result-doll-area{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 54px;align-items:center;gap:3px}
+.result-doll{min-width:0}
+.vertical-reminder{height:92%;min-height:250px;align-self:center;display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 6px;color:#271c13;background:#e8ce88;border:3px double var(--red);font-family:"DFKai-SB","BiauKai","Noto Serif TC",serif;font-size:12px;font-weight:700;line-height:1.45;writing-mode:vertical-rl;text-orientation:upright;overflow:hidden}
+.vertical-reminder strong{color:var(--red);font-size:14px;letter-spacing:.12em}
+.vertical-reminder span{max-height:100%;overflow:hidden}
 .talisman-copy{background:#ecd493;border-color:var(--red);border-radius:2px}
 .ribbon{border-color:#362219;color:var(--red)}
 .damage-2 .bandage{background:#d9ad59;color:#7d2118;border-color:#6f2b1c;font-family:"DFKai-SB","BiauKai",serif}
-@media(max-width:520px){.field-grid.three-fields{grid-template-columns:1fr}.inscription-guide{grid-template-columns:1fr}.game-card{box-shadow:inset 0 0 55px #6a3e1c28}.site-shell{padding-top:0}}
+@media(max-width:520px){.field-grid.two-fields{grid-template-columns:1fr}.inscription-guide{grid-template-columns:1fr}.game-card{box-shadow:inset 0 0 55px #6a3e1c28}.site-shell{padding-top:0}.result-sheet{grid-template-columns:58% 7px 1fr;padding:8px}.result-doll-area{grid-template-columns:minmax(0,1fr) 42px}.vertical-reminder{min-height:220px;padding:6px 3px;font-size:10px}.vertical-reminder strong{font-size:12px}}

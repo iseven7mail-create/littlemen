@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 
 type Gender = "male" | "female";
-type Tool = "slipper" | "hammer" | "stamp";
+type Tool = "slipper" | "hammer";
 
 const PHRASES = [
   "我可以承認自己的感受，不必再用笑容把一切藏起來。",
@@ -31,7 +31,6 @@ const PHRASES = [
 const toolInfo: Record<Tool, { label: string; emoji: string; phrase: string }> = {
   slipper: { label: "拖鞋", emoji: "🩴", phrase: "鳥事走開！" },
   hammer: { label: "軟槌", emoji: "🔨", phrase: "退散！" },
-  stamp: { label: "退散印", emoji: "🔴", phrase: "今天不內耗！" },
 };
 
 const lineUrl = "https://line.me/R/ti/p/%40158vkyka";
@@ -41,7 +40,6 @@ export default function Home() {
   const [step, setStep] = useState(1);
   const [gender, setGender] = useState<Gender>("female");
   const [name, setName] = useState("");
-  const [nickname, setNickname] = useState("");
   const [role, setRole] = useState("");
   const [tool, setTool] = useState<Tool>("hammer");
   const [hits, setHits] = useState(0);
@@ -53,8 +51,7 @@ export default function Home() {
   const ambientRef = useRef<{ nodes: OscillatorNode[]; timer: number } | null>(null);
 
   const release = Math.min(100, hits * 4);
-  const displayName = name.trim() || nickname.trim() || "這個小人";
-  const displayNickname = nickname.trim() || "無暱稱";
+  const displayName = name.trim() || "這個小人";
   const displayRole = role.trim() || "身分未填";
   const dollSrc = `/dolls/talisman-${gender}-v2.png`;
   const damageClass = useMemo(() => hits >= 20 ? "damage-4" : hits >= 14 ? "damage-3" : hits >= 8 ? "damage-2" : hits >= 3 ? "damage-1" : "", [hits]);
@@ -138,14 +135,14 @@ export default function Home() {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     const melody = [196, 233.08, 261.63, 311.13];
-    osc.type = kind === "slipper" ? "square" : kind === "stamp" ? "sine" : "triangle";
+    osc.type = kind === "slipper" ? "square" : "triangle";
     osc.frequency.setValueAtTime(melody[hits % melody.length], now);
-    osc.frequency.exponentialRampToValueAtTime(kind === "stamp" ? 82 : 110, now + (kind === "stamp" ? 0.42 : 0.13));
-    gain.gain.setValueAtTime(kind === "stamp" ? 0.11 : 0.08, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "stamp" ? 0.5 : 0.16));
+    osc.frequency.exponentialRampToValueAtTime(110, now + 0.13);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
     osc.connect(gain).connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + (kind === "stamp" ? 0.52 : 0.18));
+    osc.stop(now + 0.18);
   }
 
   function hit() {
@@ -171,7 +168,6 @@ export default function Home() {
     setStep(1);
     setHits(0);
     setName("");
-    setNickname("");
     setRole("");
   }
 
@@ -203,7 +199,8 @@ export default function Home() {
     ctx.drawImage(doll, 54 * s, 168 * s, 405 * s, 620 * s);
     ctx.fillStyle = "#7c1e18";
     ctx.font = `800 ${22 * s}px Arial`;
-    [["姓名", displayName], ["暱稱", displayNickname], ["職位", displayRole]].forEach(([label, value], index) => ctx.fillText(`${label}｜${value}`, 258 * s, (423 + index * 48) * s, 270 * s));
+    drawVerticalText(ctx, `姓名${displayName}`, 282 * s, 395 * s, 27 * s, 315 * s);
+    drawVerticalText(ctx, `職位${displayRole}`, 230 * s, 395 * s, 27 * s, 315 * s);
     ctx.textAlign = "left";
     ctx.fillStyle = "#7f2118";
     ctx.font = `700 ${30 * s}px Arial`;
@@ -214,12 +211,15 @@ export default function Home() {
     ctx.font = `600 ${34 * s}px Arial`;
     wrapText(ctx, PHRASES[phraseIndex], 500 * s, 410 * s, 500 * s, 54 * s);
     ctx.strokeStyle = "#9c251b";
-    ctx.lineWidth = 7 * s;
-    ctx.strokeRect(510 * s, 650 * s, 420 * s, 82 * s);
+    ctx.lineWidth = 5 * s;
+    ctx.strokeRect(430 * s, 185 * s, 78 * s, 555 * s);
     ctx.textAlign = "center";
     ctx.fillStyle = "#9c251b";
-    ctx.font = `800 ${34 * s}px Arial`;
-    ctx.fillText("情緒退散提醒", 720 * s, 706 * s);
+    ctx.font = `800 ${26 * s}px Arial`;
+    drawVerticalText(ctx, "退散提醒", 480 * s, 215 * s, 32 * s, 250 * s);
+    ctx.fillStyle = "#21160f";
+    ctx.font = `600 ${22 * s}px Arial`;
+    drawVerticalText(ctx, PHRASES[phraseIndex], 447 * s, 215 * s, 27 * s, 500 * s);
     try { const qr = await load(qrUrl); ctx.drawImage(qr, 98 * s, (height / s - 410) * s, 210 * s, 210 * s); } catch {}
     ctx.textAlign = "left";
     ctx.fillStyle = "#167a3d";
@@ -274,16 +274,15 @@ export default function Home() {
       </RadioGroup>
       <div className="music-panel"><Music2 /><div><strong>靈異氛圍音樂</strong><small>按下開始後播放，可隨時關閉</small></div><Switch checked={music} onCheckedChange={setMusic} aria-label="靈異氛圍音樂" /></div>
       <Button className="crayon-button primary" onClick={() => { setStep(2); if (music) startAmbient(); }}>開始退散</Button>
-      <p className="privacy-note">不用照片，只把姓名、暱稱與職位／關係寫上符紙小人。</p>
+      <p className="privacy-note">不用照片，只把姓名與職位／關係寫上符紙小人。</p>
     </div>}
 
     {step === 2 && <div className="screen screen-enter">
       <div className="burst-title"><h2>把對方資料寫上小人</h2></div>
-      <DollStage src={dollSrc} damageClass="" name={displayName} nickname={displayNickname} role={displayRole} />
-      <div className="inscription-guide"><strong>紙人怎麼寫？</strong><span>姓名為主、暱稱幫助辨識、職位／關係說明身分；三項都會以朱砂字樣寫在小人身上。</span></div>
-      <div className="field-grid three-fields">
+      <DollStage src={dollSrc} damageClass="" name={displayName} role={displayRole} />
+      <div className="inscription-guide"><strong>紙人怎麼寫？</strong><span>填入姓名與職位／關係，兩項資料會以朱砂字樣直排寫在小人身上。</span></div>
+      <div className="field-grid two-fields">
         <label>姓名<input maxLength={12} value={name} onChange={(event) => setName(event.target.value)} placeholder="例如：王大明" /></label>
-        <label>暱稱<input maxLength={12} value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="例如：阿明" /></label>
         <label>職位／關係<input maxLength={12} value={role} onChange={(event) => setRole(event.target.value)} placeholder="例如：主管、前任" /></label>
       </div>
       <Button className="crayon-button primary" onClick={() => setStep(3)}>寫好了，選退散工具</Button>
@@ -292,7 +291,7 @@ export default function Home() {
     {step === 3 && <div className="screen screen-enter">
       <div className="hud"><div><span>敲打</span><strong>{hits}</strong><small>次</small></div><div className="meter"><span>壓力釋放 {release}%</span><Progress value={release} /></div><div className="audio-controls"><label title="背景音樂"><Music2 /><Switch checked={music} onCheckedChange={toggleMusic} aria-label="背景音樂" /></label><label title="敲擊音效">{sound ? <Volume2 /> : <VolumeX />}<Switch checked={sound} onCheckedChange={setSound} aria-label="敲擊音效" /></label></div></div>
       <button className={`hit-zone ${impact ? "is-hit" : ""}`} onClick={hit} aria-label={`使用${toolInfo[tool].label}敲打紙人`}>
-        <DollStage src={dollSrc} damageClass={damageClass} name={displayName} nickname={displayNickname} role={displayRole} />
+        <DollStage src={dollSrc} damageClass={damageClass} name={displayName} role={displayRole} />
         <span className={`tool-swing tool-${tool}`}>{toolInfo[tool].emoji}</span>{impact && <span className="impact-word">{toolInfo[tool].phrase}</span>}<span className="hit-hint">點紙人開始敲打，每下都有不同音符</span>
       </button>
       <RadioGroup value={tool} onValueChange={(value) => setTool(value as Tool)} className="tools-grid">{(Object.keys(toolInfo) as Tool[]).map((item) => <label key={item} className={`tool-card ${tool === item ? "selected" : ""}`}><RadioGroupItem value={item} className="sr-only" /><span>{toolInfo[item].emoji}</span><strong>{toolInfo[item].label}</strong></label>)}</RadioGroup>
@@ -301,7 +300,7 @@ export default function Home() {
 
     {step === 4 && <div className="screen screen-enter result-screen">
       <div className="burst-title"><h2>你的退散符完成了</h2></div>
-      <div className="result-sheet"><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} nickname={displayNickname} role={displayRole} /></div><div className="cut-line">✂</div><article className="talisman-copy"><span className="ribbon">勒令退散符</span><p className="target">{displayRole}・{displayName}</p><h2>勒令退散</h2><p className="healing">{PHRASES[phraseIndex]}</p><span className="emotion-seal">情緒退散提醒</span></article></div>
+      <div className="result-sheet"><div className="result-doll-area"><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} role={displayRole} /></div><aside className="vertical-reminder"><strong>退散提醒</strong><span>{PHRASES[phraseIndex]}</span></aside></div><div className="cut-line">✂</div><article className="talisman-copy"><span className="ribbon">勒令退散符</span><p className="target">{displayRole}・{displayName}</p><h2>勒令退散</h2><span className="emotion-seal">元辰小人宮</span></article></div>
       <div className="download-grid"><Button variant="outline" onClick={() => download("share")}><Download />下載手機分享圖</Button><Button variant="outline" onClick={() => download("a4")}><Printer />下載 A4 列印版</Button></div>
       <Button className="share-button" onClick={shareResult}><Share2 />分享</Button>
       <aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous" /><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside>
@@ -311,11 +310,11 @@ export default function Home() {
   </section></main>;
 }
 
-function DollStage({ src, damageClass, name, nickname, role }: { src: string; damageClass: string; name: string; nickname: string; role: string }) {
+function DollStage({ src, damageClass, name, role }: { src: string; damageClass: string; name: string; role: string }) {
   return <div className={`doll-stage talisman-doll ${damageClass}`}>
     <img className="doll-art" src={src} alt="黃符紙小人" />
-    <div className="doll-inscription" aria-label={`紙人資料：姓名 ${name}，暱稱 ${nickname}，職位或關係 ${role}`}>
-      <span><b>姓名</b>{name}</span><span><b>暱稱</b>{nickname}</span><span><b>職位</b>{role}</span>
+    <div className="doll-inscription" aria-label={`紙人資料：姓名 ${name}，職位或關係 ${role}`}>
+      <span><b>姓名</b>{name}</span><span><b>職位</b>{role}</span>
     </div>
     <span className="bruise" aria-hidden>〽</span><span className="bandage" aria-hidden>鎮</span><span className="smoke" aria-hidden>☁</span><span className="stamp-mark" aria-hidden>退散</span>
   </div>;
@@ -328,4 +327,14 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: num
     if (ctx.measureText(next).width > maxWidth && line) { ctx.fillText(line, x, y); line = char; y += lineHeight; } else line = next;
   }
   ctx.fillText(line, x, y);
+}
+
+function drawVerticalText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, lineHeight: number, maxHeight: number) {
+  let column = 0;
+  let offset = 0;
+  for (const char of text) {
+    if (offset + lineHeight > maxHeight) { column += 1; offset = 0; }
+    ctx.fillText(char, x - column * lineHeight, y + offset);
+    offset += lineHeight;
+  }
 }

@@ -4,10 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://shaofu-tuishan.i-seven7mail.chatgpt.site"),
   title: "元辰小人宮",
-  description: "把姓名、暱稱與職位或關係寫上黃符紙小人，完成情緒退散儀式並生成可分享、列印的退散符。",
+  description: "把姓名與職位或關係直排寫上黃符紙小人，完成情緒退散儀式並生成可分享、列印的退散符。",
   openGraph: {
     title: "元辰小人宮",
-    description: "寫下姓名、暱稱與職位／關係，勒令煩惱退散。",
+    description: "直式寫下姓名與職位／關係，勒令煩惱退散。",
     url: "/",
     siteName: "元辰小人宮",
     locale: "zh_TW",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "元辰小人宮",
-    description: "寫下姓名、暱稱與職位／關係，勒令煩惱退散。",
+    description: "直式寫下姓名與職位／關係，勒令煩惱退散。",
     images: ["/og.png"],
   },
   icons: {
