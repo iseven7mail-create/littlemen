@@ -291,6 +291,7 @@ export default function Home() {
 
     {step === 4 && <div className="screen screen-enter result-screen">
       <div className="burst-title"><h2>你的退散符完成了</h2></div>
+      <p className="m-0 text-center text-base font-bold text-[var(--red)]">歡迎列印後焚毀下載</p>
       <div className="result-sheet result-triad"><aside className="vertical-reminder reminder-left"><span>{reminderLeft}</span></aside><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} role={displayRole} labels={false} /></div><aside className="vertical-reminder reminder-right"><span>{reminderRight}</span></aside></div>
       <div className="download-grid"><Button variant="outline" onClick={() => download("share")}><Download />下載手機分享圖</Button><Button variant="outline" onClick={() => download("a4")}><Printer />下載 A4 列印版</Button></div>
       <Button className="share-button" onClick={shareResult}><Share2 />分享</Button>
