@@ -200,21 +200,17 @@ export default function Home() {
     ctx.drawImage(doll, 338 * s, 168 * s, 405 * s, 620 * s);
     ctx.fillStyle = "#7c1e18";
     ctx.font = `800 ${22 * s}px Arial`;
-    drawVerticalText(ctx, `姓名${displayName}`, 565 * s, 395 * s, 27 * s, 315 * s);
-    drawVerticalText(ctx, `職位${displayRole}`, 515 * s, 395 * s, 27 * s, 315 * s);
+    drawVerticalText(ctx, displayName, 565 * s, 395 * s, 30 * s, 315 * s);
+    drawVerticalText(ctx, displayRole, 515 * s, 395 * s, 30 * s, 315 * s);
     ctx.strokeStyle = "#9c251b";
     ctx.lineWidth = 5 * s;
     ctx.strokeRect(80 * s, 185 * s, 130 * s, 555 * s);
     ctx.strokeRect(870 * s, 185 * s, 130 * s, 555 * s);
     ctx.textAlign = "center";
-    ctx.fillStyle = "#9c251b";
-    ctx.font = `800 ${26 * s}px Arial`;
-    drawVerticalText(ctx, "退散", 178 * s, 215 * s, 32 * s, 180 * s);
-    drawVerticalText(ctx, "提醒", 968 * s, 215 * s, 32 * s, 180 * s);
     ctx.fillStyle = "#21160f";
-    ctx.font = `600 ${22 * s}px Arial`;
-    drawVerticalText(ctx, reminderLeft, 138 * s, 215 * s, 27 * s, 500 * s);
-    drawVerticalText(ctx, reminderRight, 928 * s, 215 * s, 27 * s, 500 * s);
+    ctx.font = `700 ${28 * s}px Arial`;
+    drawVerticalText(ctx, reminderLeft, 145 * s, 215 * s, 34 * s, 500 * s);
+    drawVerticalText(ctx, reminderRight, 935 * s, 215 * s, 34 * s, 500 * s);
     try { const qr = await load(qrUrl); ctx.drawImage(qr, 98 * s, (height / s - 410) * s, 210 * s, 210 * s); } catch {}
     ctx.textAlign = "left";
     ctx.fillStyle = "#167a3d";
@@ -286,7 +282,7 @@ export default function Home() {
     {step === 3 && <div className="screen screen-enter">
       <div className="hud"><div><span>敲打</span><strong>{hits}</strong><small>次</small></div><div className="meter"><span>壓力釋放 {release}%</span><Progress value={release} /></div><div className="audio-controls"><label title="背景音樂"><Music2 /><Switch checked={music} onCheckedChange={toggleMusic} aria-label="背景音樂" /></label><label title="敲擊音效">{sound ? <Volume2 /> : <VolumeX />}<Switch checked={sound} onCheckedChange={setSound} aria-label="敲擊音效" /></label></div></div>
       <button className={`hit-zone ${impact ? "is-hit" : ""}`} onClick={hit} aria-label={`使用${toolInfo[tool].label}敲打紙人`}>
-        <DollStage src={dollSrc} damageClass={damageClass} name={displayName} role={displayRole} />
+        <DollStage src={dollSrc} damageClass={damageClass} name={displayName} role={displayRole} labels={false} />
         <span className={`tool-swing tool-${tool}`}>{toolInfo[tool].emoji}</span>{impact && <span className="impact-word">{toolInfo[tool].phrase}</span>}<span className="hit-hint">點紙人開始敲打，每下都有不同音符</span>
       </button>
       <RadioGroup value={tool} onValueChange={(value) => setTool(value as Tool)} className="tools-grid">{(Object.keys(toolInfo) as Tool[]).map((item) => <label key={item} className={`tool-card ${tool === item ? "selected" : ""}`}><RadioGroupItem value={item} className="sr-only" /><span>{toolInfo[item].emoji}</span><strong>{toolInfo[item].label}</strong></label>)}</RadioGroup>
@@ -295,7 +291,7 @@ export default function Home() {
 
     {step === 4 && <div className="screen screen-enter result-screen">
       <div className="burst-title"><h2>你的退散符完成了</h2></div>
-      <div className="result-sheet result-triad"><aside className="vertical-reminder reminder-left"><strong>退散</strong><span>{reminderLeft}</span></aside><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} role={displayRole} /></div><aside className="vertical-reminder reminder-right"><strong>提醒</strong><span>{reminderRight}</span></aside></div>
+      <div className="result-sheet result-triad"><aside className="vertical-reminder reminder-left"><span>{reminderLeft}</span></aside><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} role={displayRole} labels={false} /></div><aside className="vertical-reminder reminder-right"><span>{reminderRight}</span></aside></div>
       <div className="download-grid"><Button variant="outline" onClick={() => download("share")}><Download />下載手機分享圖</Button><Button variant="outline" onClick={() => download("a4")}><Printer />下載 A4 列印版</Button></div>
       <Button className="share-button" onClick={shareResult}><Share2 />分享</Button>
       <aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous" /><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside>
@@ -305,11 +301,11 @@ export default function Home() {
   </section></main>;
 }
 
-function DollStage({ src, damageClass, name, role }: { src: string; damageClass: string; name: string; role: string }) {
+function DollStage({ src, damageClass, name, role, labels = true }: { src: string; damageClass: string; name: string; role: string; labels?: boolean }) {
   return <div className={`doll-stage talisman-doll ${damageClass}`}>
     <img className="doll-art" src={src} alt="黃符紙小人" />
-    <div className="doll-inscription" aria-label={`紙人資料：姓名 ${name}，職位或關係 ${role}`}>
-      <span><b>姓名</b>{name}</span><span><b>職位</b>{role}</span>
+    <div className={`doll-inscription ${labels ? "" : "values-only"}`} aria-label={`紙人資料：姓名 ${name}，職位或關係 ${role}`}>
+      <span>{labels && <b>姓名</b>}{name}</span><span>{labels && <b>職位</b>}{role}</span>
     </div>
     <span className="bruise" aria-hidden>〽</span><span className="bandage" aria-hidden>鎮</span><span className="smoke" aria-hidden>☁</span><span className="stamp-mark" aria-hidden>退散</span>
   </div>;

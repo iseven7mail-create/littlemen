@@ -54,3 +54,10 @@ body{background-color:#17120d;background-image:radial-gradient(circle at 50% 8%,
 .ribbon{border-color:#362219;color:var(--red)}
 .damage-2 .bandage{background:#d9ad59;color:#7d2118;border-color:#6f2b1c;font-family:"DFKai-SB","BiauKai",serif}
 @media(max-width:520px){.field-grid.two-fields{grid-template-columns:1fr}.inscription-guide{grid-template-columns:1fr}.game-card{box-shadow:inset 0 0 55px #6a3e1c28}.site-shell{padding-top:0}.result-sheet.result-triad{grid-template-columns:46px minmax(0,1fr) 46px;gap:4px;padding:8px}.vertical-reminder{min-height:260px;padding:6px 3px;font-size:10px}.vertical-reminder strong{font-size:12px}}
+
+/* 步驟 3、4：紙人僅保留填入內容，完成符的提醒與印記加大 */
+.doll-inscription.values-only{font-size:clamp(13px,3.4vw,17px);gap:10px}
+.damage-4 .stamp-mark{top:67%;padding:7px 14px;border-width:5px;font-size:30px;line-height:1.1;box-shadow:1px 2px 0 #6e1c1533}
+.result-sheet.result-triad{grid-template-columns:72px minmax(0,1fr) 72px}
+.vertical-reminder{align-items:center;justify-content:center;gap:0;padding:10px 7px;font-size:clamp(14px,3.8vw,18px);font-weight:800;line-height:1.55}
+@media(max-width:520px){.result-sheet.result-triad{grid-template-columns:54px minmax(0,1fr) 54px}.vertical-reminder{padding:7px 4px;font-size:13px}.damage-4 .stamp-mark{padding:5px 11px;font-size:25px}}
