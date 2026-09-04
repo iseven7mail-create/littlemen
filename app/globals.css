@@ -9,3 +9,43 @@
 .editable-stage{touch-action:none;cursor:grab;user-select:none}.editable-stage:active{cursor:grabbing}.editable-stage:after{content:"用手勢調整照片";position:absolute;z-index:8;left:50%;top:7%;transform:translateX(-50%);padding:4px 9px;border-radius:999px;background:#1559a8e8;color:#fff;font-size:10px;font-weight:900;white-space:nowrap;box-shadow:2px 3px 0 #19344d55}.photo-tools{position:absolute;z-index:10;top:14%;right:0;display:grid;grid-template-columns:repeat(2,34px);gap:5px;padding:6px;background:#fff7e9e8;border:2px dashed var(--red);border-radius:13px;box-shadow:3px 4px 0 #39271933;touch-action:manipulation}.photo-tools button{width:34px;height:34px;padding:0;display:grid;place-items:center;border:2px solid #34291f;border-radius:9px;background:var(--yellow);color:#211b13;font-size:22px;font-weight:950;line-height:1}.photo-tools button:active{transform:translate(1px,2px);box-shadow:none}.photo-tools .reset-tool{grid-column:1/-1;width:100%;height:27px;background:#fff;color:var(--red);border-color:var(--red);font-size:11px}.gesture-hint{display:flex;flex-direction:column;align-items:center;gap:2px;margin:-4px 0 0;padding:8px 12px;text-align:center;background:#e7f0fb;border:2px dashed var(--blue);border-radius:13px;color:#263b51}.gesture-hint strong{font-size:14px;color:var(--blue)}.gesture-hint span{font-size:11px;font-weight:800}.gesture-hint small{font-size:10px;color:#7a5030}
 @media(max-width:410px){.photo-tools{right:1%;grid-template-columns:repeat(2,31px)}.photo-tools button{width:31px;height:31px}.editable-stage:after{top:5%}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+
+/* 元辰小人宮：黃符紙、朱砂與墨線的民俗紙人視覺 */
+:root{--paper:#ead290;--ink:#21160f;--red:#99251c;--blue:#263d48;--yellow:#d59b25;--green:#336b47}
+body{background-color:#17120d;background-image:radial-gradient(circle at 50% 8%,#8b642a55,transparent 36%),repeating-linear-gradient(90deg,#120e0b 0 2px,#1b150f 2px 7px)}
+.site-shell{padding-top:24px}
+.game-card{background-color:var(--paper);background-image:linear-gradient(90deg,transparent 0 6%,#9a261c15 6.2% 6.6%,transparent 6.8% 93%,#9a261c15 93.2% 93.6%,transparent 93.8%),repeating-linear-gradient(3deg,transparent 0 13px,#785c3210 14px 15px);border-color:#3a2115;border-radius:8px;box-shadow:0 0 0 5px #b78432,0 0 0 8px #5b291c,8px 12px 28px #0008,inset 0 0 70px #6a3e1c2b}
+.game-card:before{opacity:.32;background-image:radial-gradient(circle at 20% 12%,#74491e18 0 1px,transparent 2px),repeating-linear-gradient(176deg,transparent 0 10px,#6d4c2415 11px 12px);background-size:19px 19px,auto}
+.game-header{padding:5px 10px 9px;border-bottom:3px double var(--red)}
+.game-header h1{color:#7e1f18;letter-spacing:.18em;text-shadow:1px 1px 0 #f5e1a4;font-family:"DFKai-SB","BiauKai","Noto Serif TC",serif}
+.eyebrow{color:#38261a;letter-spacing:.22em}
+.sun-doodle,.spiral{width:42px;height:42px;display:grid;place-items:center;color:var(--red);font-size:25px;border:3px double currentColor;border-radius:50%;font-family:"DFKai-SB","BiauKai",serif;transform:rotate(-5deg)}
+.spiral{transform:rotate(6deg)}
+.stepper span.active{background:var(--red);border-color:var(--red);box-shadow:2px 2px 0 #4e160f}
+.burst-title{background:#eed99d;border:4px double var(--red);clip-path:none;border-radius:3px;box-shadow:inset 0 0 0 4px #d6ad57}
+.burst-title h2{font-family:"DFKai-SB","BiauKai","Noto Serif TC",serif;letter-spacing:.08em}
+.choice-card{background:#e7cd87;border-color:#5d3920;border-radius:5px;box-shadow:inset 0 0 24px #5d351b1f}
+.choice-card.selected{color:var(--red);border-color:var(--red);box-shadow:4px 6px 0 #661b13}
+.choice-card img{filter:drop-shadow(2px 5px 2px #4a2a1766)}
+.choice-card strong{font-family:"DFKai-SB","BiauKai",serif}
+.crayon-button{border-radius:4px!important;transform:none;background-image:repeating-linear-gradient(0deg,transparent 0 7px,#61211812 8px 9px)!important}
+.crayon-button.primary{background-color:#b93322!important;color:#fff3cf!important;border-color:#44160f!important}
+.music-panel{background:#2d221d;color:#f4dfaa;border-color:#b68a42;border-radius:4px}
+.privacy-note{color:#4c321f;font-weight:700}
+.doll-stage{aspect-ratio:2/3;filter:drop-shadow(3px 7px 3px #3d220f66)}
+.doll-art{object-fit:contain}
+.talisman-doll .doll-inscription{position:absolute;z-index:4;top:36%;left:28%;right:28%;display:flex;flex-direction:column;gap:5px;padding:7px 3px;color:#861d18;text-align:center;font-family:"DFKai-SB","BiauKai","Noto Serif TC",serif;font-size:clamp(10px,2.8vw,14px);font-weight:900;line-height:1.15;text-shadow:0 1px #efcf80;transform:rotate(-.5deg);pointer-events:none}
+.doll-inscription span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid #8b281a80}
+.doll-inscription b{margin-right:4px;color:#382018;font-size:.72em;font-weight:900}
+.inscription-guide{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:9px;padding:10px 12px;background:#dec17a;border:3px double var(--red);color:#39271a;line-height:1.55}
+.inscription-guide strong{color:var(--red);white-space:nowrap;font-family:"DFKai-SB","BiauKai",serif}
+.inscription-guide span{font-size:12px;font-weight:700}
+.field-grid.three-fields{grid-template-columns:repeat(3,1fr)}
+.field-grid input{background:#f0dca5;border-radius:3px;border-color:#4c2b1c}
+.field-grid input:focus{border-color:var(--red);box-shadow:0 0 0 3px #99251c25}
+.hit-zone .doll-stage{width:min(76vw,370px)}
+.result-sheet{background:#e2c277;border-color:#8d5c28}
+.talisman-copy{background:#ecd493;border-color:var(--red);border-radius:2px}
+.ribbon{border-color:#362219;color:var(--red)}
+.damage-2 .bandage{background:#d9ad59;color:#7d2118;border-color:#6f2b1c;font-family:"DFKai-SB","BiauKai",serif}
+@media(max-width:520px){.field-grid.three-fields{grid-template-columns:1fr}.inscription-guide{grid-template-columns:1fr}.game-card{box-shadow:inset 0 0 55px #6a3e1c28}.site-shell{padding-top:0}}
