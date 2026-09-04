@@ -200,8 +200,9 @@ export default function Home() {
     ctx.drawImage(doll, 338 * s, 168 * s, 405 * s, 620 * s);
     ctx.fillStyle = "#7c1e18";
     ctx.font = `800 ${22 * s}px Arial`;
-    drawVerticalText(ctx, displayName, 565 * s, 395 * s, 30 * s, 315 * s);
-    drawVerticalText(ctx, displayRole, 515 * s, 395 * s, 30 * s, 315 * s);
+    drawVerticalText(ctx, displayName, 540 * s, 395 * s, 26 * s, 130 * s);
+    const roleTop = 395 + Math.min(Array.from(displayName).length, 5) * 26 + 14;
+    drawVerticalText(ctx, displayRole, 540 * s, roleTop * s, 26 * s, 130 * s);
     ctx.strokeStyle = "#9c251b";
     ctx.lineWidth = 5 * s;
     ctx.strokeRect(80 * s, 185 * s, 130 * s, 555 * s);
@@ -263,7 +264,6 @@ export default function Home() {
           <strong>{item === "male" ? "男紙人" : "女紙人"}</strong>
         </label>)}
       </RadioGroup>
-      <div className="music-panel"><Music2 /><div><strong>靈異氛圍音樂</strong><small>按下開始後播放，可隨時關閉</small></div><Switch checked={music} onCheckedChange={setMusic} aria-label="靈異氛圍音樂" /></div>
       <Button className="crayon-button primary" onClick={() => { setStep(2); if (music) startAmbient(); }}>開始退散</Button>
       <p className="privacy-note">不用照片，只把姓名與職位／關係寫上符紙小人。</p>
     </div>}
