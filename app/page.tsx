@@ -55,6 +55,7 @@ export default function Home() {
   const displayRole = role.trim() || "身分未填";
   const dollSrc = `/dolls/talisman-${gender}-v2.png`;
   const damageClass = useMemo(() => hits >= 20 ? "damage-4" : hits >= 14 ? "damage-3" : hits >= 8 ? "damage-2" : hits >= 3 ? "damage-1" : "", [hits]);
+  const [reminderLeft, reminderRight] = splitReminder(PHRASES[phraseIndex]);
 
   useEffect(() => () => {
     if (ambientRef.current) {
@@ -196,30 +197,24 @@ export default function Home() {
     ctx.font = `900 ${58 * s}px Arial`;
     ctx.fillText("元辰小人宮・勒令退散符", width / 2, 118 * s);
     const doll = await load(dollSrc);
-    ctx.drawImage(doll, 54 * s, 168 * s, 405 * s, 620 * s);
+    ctx.drawImage(doll, 338 * s, 168 * s, 405 * s, 620 * s);
     ctx.fillStyle = "#7c1e18";
     ctx.font = `800 ${22 * s}px Arial`;
-    drawVerticalText(ctx, `姓名${displayName}`, 282 * s, 395 * s, 27 * s, 315 * s);
-    drawVerticalText(ctx, `職位${displayRole}`, 230 * s, 395 * s, 27 * s, 315 * s);
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#7f2118";
-    ctx.font = `700 ${30 * s}px Arial`;
-    ctx.fillText(`${displayRole}・${displayName}`, 500 * s, 235 * s);
-    ctx.font = `900 ${68 * s}px Arial`;
-    ctx.fillText("勒令退散", 500 * s, 330 * s);
-    ctx.fillStyle = "#201d18";
-    ctx.font = `600 ${34 * s}px Arial`;
-    wrapText(ctx, PHRASES[phraseIndex], 500 * s, 410 * s, 500 * s, 54 * s);
+    drawVerticalText(ctx, `姓名${displayName}`, 565 * s, 395 * s, 27 * s, 315 * s);
+    drawVerticalText(ctx, `職位${displayRole}`, 515 * s, 395 * s, 27 * s, 315 * s);
     ctx.strokeStyle = "#9c251b";
     ctx.lineWidth = 5 * s;
-    ctx.strokeRect(430 * s, 185 * s, 78 * s, 555 * s);
+    ctx.strokeRect(80 * s, 185 * s, 130 * s, 555 * s);
+    ctx.strokeRect(870 * s, 185 * s, 130 * s, 555 * s);
     ctx.textAlign = "center";
     ctx.fillStyle = "#9c251b";
     ctx.font = `800 ${26 * s}px Arial`;
-    drawVerticalText(ctx, "退散提醒", 480 * s, 215 * s, 32 * s, 250 * s);
+    drawVerticalText(ctx, "退散", 178 * s, 215 * s, 32 * s, 180 * s);
+    drawVerticalText(ctx, "提醒", 968 * s, 215 * s, 32 * s, 180 * s);
     ctx.fillStyle = "#21160f";
     ctx.font = `600 ${22 * s}px Arial`;
-    drawVerticalText(ctx, PHRASES[phraseIndex], 447 * s, 215 * s, 27 * s, 500 * s);
+    drawVerticalText(ctx, reminderLeft, 138 * s, 215 * s, 27 * s, 500 * s);
+    drawVerticalText(ctx, reminderRight, 928 * s, 215 * s, 27 * s, 500 * s);
     try { const qr = await load(qrUrl); ctx.drawImage(qr, 98 * s, (height / s - 410) * s, 210 * s, 210 * s); } catch {}
     ctx.textAlign = "left";
     ctx.fillStyle = "#167a3d";
@@ -300,7 +295,7 @@ export default function Home() {
 
     {step === 4 && <div className="screen screen-enter result-screen">
       <div className="burst-title"><h2>你的退散符完成了</h2></div>
-      <div className="result-sheet"><div className="result-doll-area"><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} role={displayRole} /></div><aside className="vertical-reminder"><strong>退散提醒</strong><span>{PHRASES[phraseIndex]}</span></aside></div><div className="cut-line">✂</div><article className="talisman-copy"><span className="ribbon">勒令退散符</span><p className="target">{displayRole}・{displayName}</p><h2>勒令退散</h2><span className="emotion-seal">元辰小人宮</span></article></div>
+      <div className="result-sheet result-triad"><aside className="vertical-reminder reminder-left"><strong>退散</strong><span>{reminderLeft}</span></aside><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} role={displayRole} /></div><aside className="vertical-reminder reminder-right"><strong>提醒</strong><span>{reminderRight}</span></aside></div>
       <div className="download-grid"><Button variant="outline" onClick={() => download("share")}><Download />下載手機分享圖</Button><Button variant="outline" onClick={() => download("a4")}><Printer />下載 A4 列印版</Button></div>
       <Button className="share-button" onClick={shareResult}><Share2 />分享</Button>
       <aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous" /><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside>
@@ -320,15 +315,6 @@ function DollStage({ src, damageClass, name, role }: { src: string; damageClass:
   </div>;
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
-  let line = "";
-  for (const char of text) {
-    const next = line + char;
-    if (ctx.measureText(next).width > maxWidth && line) { ctx.fillText(line, x, y); line = char; y += lineHeight; } else line = next;
-  }
-  ctx.fillText(line, x, y);
-}
-
 function drawVerticalText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, lineHeight: number, maxHeight: number) {
   let column = 0;
   let offset = 0;
@@ -337,4 +323,12 @@ function drawVerticalText(ctx: CanvasRenderingContext2D, text: string, x: number
     ctx.fillText(char, x - column * lineHeight, y + offset);
     offset += lineHeight;
   }
+}
+
+function splitReminder(text: string): [string, string] {
+  const clean = text.replace(/。$/, "");
+  const middle = clean.length / 2;
+  const punctuation = [...clean].map((char, index) => "，；、".includes(char) ? index : -1).filter((index) => index >= 0);
+  const splitAt = punctuation.length ? punctuation.reduce((best, index) => Math.abs(index - middle) < Math.abs(best - middle) ? index : best) + 1 : Math.ceil(middle);
+  return [clean.slice(0, splitAt), `${clean.slice(splitAt)}。`];
 }
