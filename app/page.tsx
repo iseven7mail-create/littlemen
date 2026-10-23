@@ -253,6 +253,7 @@ export default function Home() {
 
   return <main className="site-shell"><section className="game-card" aria-live="polite">
     <header className="game-header"><div className="sun-doodle" aria-hidden>令</div><div><p className="eyebrow">少甫的情緒退散儀式</p><h1>元辰小人宮</h1></div><div className="spiral" aria-hidden>敕</div></header>
+    <aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous" /><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside>
     <div className="stepper" aria-label={`步驟 ${step}／4`}>{[1, 2, 3, 4].map((number) => <span key={number} className={number <= step ? "active" : ""}>{number}</span>)}</div>
 
     {step === 1 && <div className="screen screen-enter">
@@ -295,7 +296,6 @@ export default function Home() {
       <div className="result-sheet result-triad"><aside className="vertical-reminder reminder-left"><span>{reminderLeft}</span></aside><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} role={displayRole} labels={false} /></div><aside className="vertical-reminder reminder-right"><span>{reminderRight}</span></aside></div>
       <div className="download-grid"><Button variant="outline" onClick={() => download("share")}><Download />下載手機分享圖</Button><Button variant="outline" onClick={() => download("a4")}><Printer />下載 A4 列印版</Button></div>
       <Button className="share-button" onClick={shareResult}><Share2 />分享</Button>
-      <aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous" /><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside>
       <p className="disclaimer">純屬娛樂、民俗文化與情緒自我探索，不代替心理、醫療或其他專業協助。</p>
       <Button variant="ghost" onClick={reset}><RotateCcw />重新玩一次</Button>
     </div>}

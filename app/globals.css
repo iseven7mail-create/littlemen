@@ -11,6 +11,7 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
 
 /* 元辰小人宮：黃符紙、朱砂與墨線的民俗紙人視覺 */
+.game-card>.line-card{position:relative;z-index:1;margin-top:14px}
 :root{--paper:#ead290;--ink:#21160f;--red:#99251c;--blue:#263d48;--yellow:#d59b25;--green:#336b47}
 body{background-color:#17120d;background-image:radial-gradient(circle at 50% 8%,#8b642a55,transparent 36%),repeating-linear-gradient(90deg,#120e0b 0 2px,#1b150f 2px 7px)}
 .site-shell{padding-top:24px}
