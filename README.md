@@ -1,4 +1,14 @@
-# vinext-starter
+# 元辰小人宮
+
+情緒退散互動小遊戲：選擇黃符紙小人、寫下姓名與關係、選工具敲打，最後下載手機分享圖或 A4 退散符。
+
+- [直接遊玩](https://iseven7mail-create.github.io/littlemen/)
+- [GitHub Pages 建置與發布說明](GITHUB-PAGES.md)
+- `npm run build:pages` 產生純靜態網站；推送至 `main` 後由 GitHub Actions 自動發布。
+
+以下保留原 Sites 專案的開發說明。
+
+## Sites / vinext 開發環境
 
 A clean full-stack starter running on
 [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and

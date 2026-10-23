@@ -53,7 +53,7 @@ export default function Home() {
   const release = Math.min(100, hits * 4);
   const displayName = name.trim() || "這個小人";
   const displayRole = role.trim() || "身分未填";
-  const dollSrc = `/dolls/talisman-${gender}-v2.png`;
+  const dollSrc = `./dolls/talisman-${gender}-v2.png`;
   const damageClass = useMemo(() => hits >= 20 ? "damage-4" : hits >= 14 ? "damage-3" : hits >= 8 ? "damage-2" : hits >= 3 ? "damage-1" : "", [hits]);
   const [reminderLeft, reminderRight] = splitReminder(PHRASES[phraseIndex]);
 
@@ -261,7 +261,7 @@ export default function Home() {
       <RadioGroup value={gender} onValueChange={(value) => setGender(value as Gender)} className="gender-grid">
         {(["male", "female"] as Gender[]).map((item) => <label key={item} className={`choice-card ${gender === item ? "selected" : ""}`}>
           <RadioGroupItem value={item} className="sr-only" />
-          <img src={`/dolls/talisman-${item}-v2.png`} alt={item === "male" ? "男式黃符紙小人" : "女式黃符紙小人"} />
+          <img src={`./dolls/talisman-${item}-v2.png`} alt={item === "male" ? "男式黃符紙小人" : "女式黃符紙小人"} />
           <strong>{item === "male" ? "男紙人" : "女紙人"}</strong>
         </label>)}
       </RadioGroup>
