@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { DOLL_IMAGES, LINE_QR_SRC, loadGameImage } from "@/lib/game-images";
 
 type Gender = "male" | "female";
 type Tool = "slipper" | "hammer";
@@ -34,7 +35,6 @@ const toolInfo: Record<Tool, { label: string; emoji: string; phrase: string }> =
 };
 
 const lineUrl = "https://line.me/R/ti/p/%40158vkyka";
-const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(lineUrl)}`;
 
 export default function Home() {
   const [step, setStep] = useState(1);
@@ -47,15 +47,22 @@ export default function Home() {
   const [sound, setSound] = useState(true);
   const [music, setMusic] = useState(true);
   const [phraseIndex, setPhraseIndex] = useState(0);
+  const [exporting, setExporting] = useState<"share" | "a4" | "native" | null>(null);
+  const [exportError, setExportError] = useState("");
   const audioContextRef = useRef<AudioContext | null>(null);
   const ambientRef = useRef<{ nodes: OscillatorNode[]; timer: number } | null>(null);
 
   const release = Math.min(100, hits * 4);
   const displayName = name.trim() || "這個小人";
   const displayRole = role.trim() || "身分未填";
-  const dollSrc = `./dolls/talisman-${gender}-v2.png`;
+  const dollSrc = DOLL_IMAGES[gender].full;
   const damageClass = useMemo(() => hits >= 20 ? "damage-4" : hits >= 14 ? "damage-3" : hits >= 8 ? "damage-2" : hits >= 3 ? "damage-1" : "", [hits]);
   const [reminderLeft, reminderRight] = splitReminder(PHRASES[phraseIndex]);
+
+  useEffect(() => {
+    void loadGameImage(dollSrc).catch(() => {});
+    void loadGameImage(LINE_QR_SRC).catch(() => {});
+  }, [dollSrc]);
 
   useEffect(() => () => {
     if (ambientRef.current) {
@@ -166,6 +173,7 @@ export default function Home() {
 
   function reset() {
     stopAmbient();
+    setExportError("");
     setStep(1);
     setHits(0);
     setName("");
@@ -178,13 +186,10 @@ export default function Home() {
     canvas.height = height;
     const ctx = canvas.getContext("2d")!;
     const s = width / 1080;
-    const load = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = src;
-    });
+    const [doll, qr] = await Promise.all([
+      loadGameImage(dollSrc),
+      loadGameImage(LINE_QR_SRC).catch(() => null),
+    ]);
     ctx.fillStyle = "#f1dfaa";
     ctx.fillRect(0, 0, width, height);
     ctx.strokeStyle = "#9c251b";
@@ -196,7 +201,6 @@ export default function Home() {
     ctx.fillStyle = "#8f2118";
     ctx.font = `900 ${58 * s}px Arial`;
     ctx.fillText("元辰小人宮・勒令退散符", width / 2, 118 * s);
-    const doll = await load(dollSrc);
     ctx.drawImage(doll, 338 * s, 168 * s, 405 * s, 620 * s);
     ctx.fillStyle = "#7c1e18";
     ctx.font = `800 ${22 * s}px Arial`;
@@ -212,7 +216,7 @@ export default function Home() {
     ctx.font = `700 ${28 * s}px Arial`;
     drawVerticalText(ctx, reminderLeft, 145 * s, 215 * s, 34 * s, 500 * s);
     drawVerticalText(ctx, reminderRight, 935 * s, 215 * s, 34 * s, 500 * s);
-    try { const qr = await load(qrUrl); ctx.drawImage(qr, 98 * s, (height / s - 410) * s, 210 * s, 210 * s); } catch {}
+    if (qr) ctx.drawImage(qr, 98 * s, (height / s - 410) * s, 210 * s, 210 * s);
     ctx.textAlign = "left";
     ctx.fillStyle = "#167a3d";
     ctx.font = `800 ${36 * s}px Arial`;
@@ -229,26 +233,42 @@ export default function Home() {
   }
 
   async function download(kind: "share" | "a4") {
-    const canvas = await drawResult(kind === "share" ? 1080 : 1240, kind === "share" ? 1350 : 1754);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = kind === "share" ? "元辰小人宮-退散符-分享圖.png" : "元辰小人宮-退散符-A4.png";
-      a.click();
-      URL.revokeObjectURL(url);
-    }, "image/png");
+    if (exporting) return;
+    setExporting(kind);
+    setExportError("");
+    try {
+      const canvas = await drawResult(kind === "share" ? 1080 : 1240, kind === "share" ? 1350 : 1754);
+      const blob = await canvasBlob(canvas);
+      downloadBlob(blob, kind === "share" ? "元辰小人宮-退散符-分享圖.png" : "元辰小人宮-退散符-A4.png");
+    } catch {
+      setExportError("圖片暫時無法產生，請再試一次。");
+    } finally {
+      setExporting(null);
+    }
   }
 
   async function shareResult() {
-    const canvas = await drawResult(1080, 1350);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-    const file = blob ? new File([blob], "元辰小人宮-退散符.png", { type: "image/png" }) : null;
-    if (file && navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      try { await navigator.share({ title: "元辰小人宮", text: "今天的鳥事，退散！", files: [file] }); return; } catch {}
+    if (exporting) return;
+    setExporting("native");
+    setExportError("");
+    try {
+      const canvas = await drawResult(1080, 1350);
+      const blob = await canvasBlob(canvas);
+      const file = new File([blob], "元辰小人宮-退散符.png", { type: "image/png" });
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        try {
+          await navigator.share({ title: "元辰小人宮", text: "今天的鳥事，退散！", files: [file] });
+          return;
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") return;
+        }
+      }
+      downloadBlob(blob, "元辰小人宮-退散符-分享圖.png");
+    } catch {
+      setExportError("圖片暫時無法產生，請再試一次。");
+    } finally {
+      setExporting(null);
     }
-    await download("share");
   }
 
   return <main className="site-shell"><section className="game-card" aria-live="polite">
@@ -261,7 +281,7 @@ export default function Home() {
       <RadioGroup value={gender} onValueChange={(value) => setGender(value as Gender)} className="gender-grid">
         {(["male", "female"] as Gender[]).map((item) => <label key={item} className={`choice-card ${gender === item ? "selected" : ""}`}>
           <RadioGroupItem value={item} className="sr-only" />
-          <img src={`./dolls/talisman-${item}-v2.png`} alt={item === "male" ? "男式黃符紙小人" : "女式黃符紙小人"} />
+          <img src={DOLL_IMAGES[item].preview} srcSet={`${DOLL_IMAGES[item].preview} 480w, ${DOLL_IMAGES[item].full} 768w`} sizes="(max-width: 410px) 42vw, 240px" width={480} height={720} decoding="async" fetchPriority="high" alt={item === "male" ? "男式黃符紙小人" : "女式黃符紙小人"} />
           <strong>{item === "male" ? "男紙人" : "女紙人"}</strong>
         </label>)}
       </RadioGroup>
@@ -294,27 +314,46 @@ export default function Home() {
       <div className="burst-title"><h2>你的退散符完成了</h2></div>
       <p className="m-0 text-center text-base font-bold text-[var(--red)]">歡迎列印後焚毀下載</p>
       <div className="result-sheet result-triad"><aside className="vertical-reminder reminder-left"><span>{reminderLeft}</span></aside><div className="result-doll"><DollStage src={dollSrc} damageClass="damage-4" name={displayName} role={displayRole} labels={false} /></div><aside className="vertical-reminder reminder-right"><span>{reminderRight}</span></aside></div>
-      <div className="download-grid"><Button variant="outline" onClick={() => download("share")}><Download />下載手機分享圖</Button><Button variant="outline" onClick={() => download("a4")}><Printer />下載 A4 列印版</Button></div>
-      <Button className="share-button" onClick={shareResult}><Share2 />分享</Button>
+      <div className="download-grid"><Button variant="outline" disabled={!!exporting} aria-busy={exporting === "share"} onClick={() => download("share")}><Download />{exporting === "share" ? "圖片準備中…" : "下載手機分享圖"}</Button><Button variant="outline" disabled={!!exporting} aria-busy={exporting === "a4"} onClick={() => download("a4")}><Printer />{exporting === "a4" ? "圖片準備中…" : "下載 A4 列印版"}</Button></div>
+      <Button className="share-button" disabled={!!exporting} aria-busy={exporting === "native"} onClick={shareResult}><Share2 />{exporting === "native" ? "圖片準備中…" : "分享"}</Button>
+      {exportError && <p className="disclaimer" role="alert">{exportError}</p>}
       <p className="disclaimer">純屬娛樂、民俗文化與情緒自我探索，不代替心理、醫療或其他專業協助。</p>
-      <Button variant="ghost" onClick={reset}><RotateCcw />重新玩一次</Button>
+      <Button variant="ghost" disabled={!!exporting} onClick={reset}><RotateCcw />重新玩一次</Button>
     </div>}
     {step !== 4 && <LineCard />}
   </section></main>;
 }
 
 function LineCard() {
-  return <aside className="line-card"><img src={qrUrl} alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" crossOrigin="anonymous" /><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside>;
+  return <aside className="line-card"><img src={LINE_QR_SRC} width={240} height={240} decoding="async" alt="加入 LINE 官方帳號 @158vkyka 的 QR Code" /><div><a href={lineUrl} target="_blank" rel="noreferrer">LINE 官方帳號 @158vkyka</a><p>塔羅｜占星｜催眠｜元辰宮｜祈福疏文</p><small>想以民俗祈福寄託心願，可洽少甫疏文服務</small></div></aside>;
 }
 
 function DollStage({ src, damageClass, name, role, labels = true }: { src: string; damageClass: string; name: string; role: string; labels?: boolean }) {
   return <div className={`doll-stage talisman-doll ${damageClass}`}>
-    <img className="doll-art" src={src} alt="黃符紙小人" />
+    <img className="doll-art" src={src} width={768} height={1152} decoding="async" alt="黃符紙小人" />
     <div className={`doll-inscription ${labels ? "" : "values-only"}`} aria-label={`紙人資料：姓名 ${name}，職位或關係 ${role}`}>
       <span>{labels && <b>姓名</b>}{name}</span><span>{labels && <b>職位</b>}{role}</span>
     </div>
     <span className="bruise" aria-hidden>〽</span><span className="bandage" aria-hidden>鎮</span><span className="smoke" aria-hidden>☁</span><span className="stamp-mark" aria-hidden>退散</span>
   </div>;
+}
+
+function canvasBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => canvas.toBlob((blob) => {
+    if (blob) resolve(blob);
+    else reject(new Error("Unable to export image"));
+  }, "image/png"));
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function drawVerticalText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, lineHeight: number, maxHeight: number) {
